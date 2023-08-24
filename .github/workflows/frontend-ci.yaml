@@ -1,0 +1,77 @@
+name: ci-frontend-movies
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+
+env:
+  # Set Node.js Version to match FE requirements (18.14)
+  NODE_VERSION: '18.x'
+
+jobs:
+  # note lint and test are run in parallel
+  # build waits / needs both to be completed first
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{env.NODE_VERSION}}
+          cache: 'npm'
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{env.NODE_VERSION}}
+          cache: 'npm'
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run test
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+
+    steps:
+      # as per the project ruberic, run the exact same steps as test...
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{env.NODE_VERSION}}
+          cache: 'npm'
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run test
+      # then, according to the project ruberic, build with Docker and
+      #  don't do anything else (ie do not push) as this is just to
+      #  verify the Dockerfile and build is working correctly
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false

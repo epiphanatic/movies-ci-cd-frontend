@@ -1,0 +1,16 @@
+name: cd-frontend-movies
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
