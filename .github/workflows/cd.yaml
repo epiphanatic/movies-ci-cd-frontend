@@ -1,0 +1,5 @@
+name: cd-frontend-movies
+on:
+  workflow_dispatch:
+
+jobs:
