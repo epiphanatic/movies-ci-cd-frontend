@@ -1,4 +1,4 @@
-name: ci-frontend-movies
+name: frontend-ci
 on:
   workflow_dispatch:
   pull_request:
@@ -61,7 +61,7 @@ jobs:
         run: |
           npm ci
           npm run test
-      # then, according to the project ruberic, build with Docker and
+      # then build with Docker and
       #  don't do anything else (ie do not push) as this is just to
       #  verify the Dockerfile and build is working correctly
       - name: Checkout repository

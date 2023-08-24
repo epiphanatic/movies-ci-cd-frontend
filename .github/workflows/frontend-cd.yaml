@@ -1,4 +1,4 @@
-name: cd-frontend-movies
+name: frontend-cd
 on:
   workflow_dispatch:
   push:
