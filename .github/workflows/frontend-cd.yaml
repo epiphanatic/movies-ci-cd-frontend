@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - master
 
 env:
   # Set Node.js Version to match FE requirements (18.14)
