@@ -75,7 +75,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+          # aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
           aws-region: us-east-1
 
       # TODO: this is where need to pass in the build args to docker file (i think)
@@ -91,26 +91,33 @@ jobs:
       #  (use the needs directive) This step should also utilize build-args to ensure the application is built with an environment
       #  variable REACT_APP_MOVIE_API_URL
 
-      # There should be a step that utilizes aws-actions/amazon-ecr-login action for logging into ECR.
-      #  (using 3rd party actions) The ECR login step should also be accessing Github Secrets for credentials. (secure approach)
+      # login to ECR 
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
 
       # There should be a step that pushes the docker image to ECR in the AWS account.
-      # There should be a step that deploys the application using kubectl to the eks cluster
+      - name: Build, tag, and push docker image to Amazon ECR
+        env:
+          REGISTRY: 473659653982.dkr.ecr.us-east-1.amazonaws.com 
+          REPOSITORY: frontend
+          IMAGE_TAG: ${{ github.sha }}
+          REACT_APP_MOVIE_API_URL: http://localhost:5000
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
-      # - name: Build and push Docker image
-      #   uses: docker/build-push-action@v4
-      #   with:
-      #     context: .
-      #     push: true
-      #     tags: <your-container-registry>/<your-image>:latest
+      # set up kubectl - note that the input (secrets.KUBECONFIG) is a base64 encoded string of the entire .kube/config file in home directory
+      - name: Set up kubectl
+        uses: ThomasKliszowski/setup-kubectl@v1
+        with:
+          kube-config: ${{ secrets.KUBECONFIG }}
+          kube-version: 1.15.0
 
-      # - name: Set up kubectl
-      #   uses: azure/setup-kubectl@v2
-      #   with:
-      #     version: 'latest'
-
-      # - name: Deploy to Kubernetes
-      #   # i don't know what kubeconfig is, ie which file in k8s
-      #   run: |
-      #     echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-      #     kubectl apply -f k8s/ --kubeconfig=kubeconfig.yaml
+      # There should be a step that deploys the application using kubectl to the kubernetes cluster
+      - name: Deploy to Kubernetes
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > kubeconfig.yaml
+          kubectl apply -k k8s/ --kubeconfig=kubeconfig.yaml
